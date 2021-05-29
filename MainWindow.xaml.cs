@@ -22,19 +22,23 @@ namespace MyInternetChecker
     /// </summary>
     public partial class MainWindow : Window
     {
-        private DispatcherTimer timer = null;
-        private int count = 0;
+        private DispatcherTimer _timer = null;
+        readonly double _screenHeight = SystemParameters.FullPrimaryScreenHeight;
+        readonly double _screenWidth = SystemParameters.FullPrimaryScreenWidth;
+        private int _count = 0;
         public MainWindow()
         {
             InitializeComponent();
+            Top = (_screenHeight - 10);
+            Left = 2;
             timerStart();
         }
         private void timerStart()
         {
-            timer = new DispatcherTimer();
-            timer.Tick += new EventHandler(timerTick);
-            timer.Interval = new TimeSpan(0, 0, 0, 1, 0);
-            timer.Start();
+            _timer = new DispatcherTimer();
+            _timer.Tick += new EventHandler(timerTick);
+            _timer.Interval = new TimeSpan(0, 0, 0, 1, 0);
+            _timer.Start();
         }
 
         private void timerTick(object sender, EventArgs e)
@@ -43,28 +47,28 @@ namespace MyInternetChecker
             bool isPing = PingIt.PingHost("google.com");
             if (isPing)
             {
-                if (count == 0)
+                if (_count == 0)
                 {
                     Rect.Fill = Brushes.DarkGreen;
-                    count++;
+                    _count++;
                 }
                 else
                 {
                     Rect.Fill = Brushes.SlateGray;
-                    count = 0;
+                    _count = 0;
                 }
             }
             else
             {
-                if (count == 0)
+                if (_count == 0)
                 {
                     Rect.Fill = Brushes.DarkRed;
-                    count++;
+                    _count++;
                 }
                 else
                 {
                     Rect.Fill = Brushes.SlateGray;
-                    count = 0;
+                    _count = 0;
                 }
             }
         }
