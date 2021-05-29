@@ -5,8 +5,8 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MyInternetChecker"
         mc:Ignorable="d"
-        Title="MainWindow" Height="266" Width="464" WindowStyle="SingleBorderWindow" ShowInTaskbar="False" ResizeMode="NoResize" Background="White">
-    <Grid >
-        <Rectangle x:Name="Rect" HorizontalAlignment="Center" Height="100" Stroke="Black" VerticalAlignment="Center" Width="100"/>
+        Title="MainWindow" Height="20" Width="20" WindowStyle="None" ShowInTaskbar="False" ResizeMode="NoResize" Background="White">
+    <Grid Background="Black" >
+        <Rectangle x:Name="Rect" HorizontalAlignment="Center" Height="20" Stroke="Black" VerticalAlignment="Center" Width="20" Fill="White"/>
     </Grid>
 </Window>

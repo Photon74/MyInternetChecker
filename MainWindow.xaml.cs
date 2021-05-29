@@ -23,7 +23,7 @@ namespace MyInternetChecker
     public partial class MainWindow : Window
     {
         private DispatcherTimer timer = null;
-        
+        private int count = 0;
         public MainWindow()
         {
             InitializeComponent();
@@ -39,18 +39,33 @@ namespace MyInternetChecker
 
         private void timerTick(object sender, EventArgs e)
         {
+            
             bool isPing = PingIt.PingHost("google.com");
             if (isPing)
             {
-                Rect.Fill = Brushes.DarkGreen;
-                Thread.Sleep(500);
-                Rect.Fill = Brushes.White;
+                if (count == 0)
+                {
+                    Rect.Fill = Brushes.DarkGreen;
+                    count++;
+                }
+                else
+                {
+                    Rect.Fill = Brushes.SlateGray;
+                    count = 0;
+                }
             }
             else
             {
-                Rect.Fill = Brushes.DarkRed;
-                Thread.Sleep(500);
-                Rect.Fill = Brushes.White;
+                if (count == 0)
+                {
+                    Rect.Fill = Brushes.DarkRed;
+                    count++;
+                }
+                else
+                {
+                    Rect.Fill = Brushes.SlateGray;
+                    count = 0;
+                }
             }
         }
     }
