@@ -7,6 +7,30 @@
         mc:Ignorable="d"
         Title="MainWindow" Height="20" Width="20" WindowStyle="None" ShowInTaskbar="False" ResizeMode="NoResize" Background="White" Topmost="True">
     <Grid Background="Black" >
-        <Rectangle x:Name="Rect" HorizontalAlignment="Center" Height="20" Stroke="Black" VerticalAlignment="Center" Width="20" Fill="White"/>
+        <Rectangle x:Name="Rect" 
+                   HorizontalAlignment="Center" 
+                   Height="20" 
+                   Stroke="Black" 
+                   VerticalAlignment="Center" 
+                   Width="20" 
+                   Fill="White"
+                   MouseEnter="Rect_MouseEnter"
+                   MouseLeave="Rect_MouseLeave"
+                   MouseMove="Rect_MouseMove"
+                   ToolTipService.ShowDuration="60000"
+                   ToolTipService.InitialShowDelay="0"
+                   ToolTipService.BetweenShowDelay="0">
+            <Rectangle.ToolTip>
+                <ToolTip x:Name="StatusToolTip" 
+                         Placement="Top" 
+                         StaysOpen="True"
+                         IsOpen="False"
+                         Background="WhiteSmoke"
+                         Foreground="Black"
+                         HasDropShadow="True">
+                    <TextBlock x:Name="ToolTipText" Text="Проверка состояния..." />
+                </ToolTip>
+            </Rectangle.ToolTip>
+        </Rectangle>
     </Grid>
 </Window>
