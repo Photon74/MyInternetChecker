@@ -1,5 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -17,60 +20,99 @@ namespace MyInternetChecker
         readonly double _screenWidth = SystemParameters.FullPrimaryScreenWidth;
         private int _count = 0;
         private bool _isMouseOver = false;
-
-        //private readonly string[] _hostsToCheck = { "ya.ru", "google.com" };
+        private bool _isChecking = false;
+        private long _lastYaRuPing = -1;
+        private long _lastGooglePing = -1;
+        private Dictionary<string, long> _pingResults = [];
 
         public MainWindow()
         {
             InitializeComponent();
-            Top = (_screenHeight - 20);
-            Left = 2;
+            Top = _screenHeight - this.ActualHeight;
+            Left = _screenWidth - _screenWidth;
+
+            foreach (var host in Config.HostsToCheck)
+            {
+                _pingResults[host] = -1;
+            }
+
             TimerStart();
         }
+
         private void TimerStart()
         {
             _timer = new DispatcherTimer();
             _timer.Tick += new EventHandler(TimerTick);
-            _timer.Interval = new TimeSpan(0, 0, 0, 1, 0);
+            _timer.Interval = Config.CheckInterval;
             _timer.Start();
         }
 
-        private void TimerTick(object sender, EventArgs e)
+        private async void TimerTick(object sender, EventArgs e)
         {
+            if (_isChecking) return;
 
-            bool internetAvailable = CheckInternetConnection();
-            if (internetAvailable)
+            _isChecking = true;
+            try
             {
-                if (_count == 0)
+                bool internetAvailable = await CheckInternetConnectionAsync();
+                Rect.Fill = internetAvailable
+                    ? (_count == 0) ? Brushes.DarkGreen : Brushes.SlateGray
+                    : (_count == 0) ? Brushes.DarkRed : Brushes.SlateGray;
+                _count = (_count + 1) % 2; // Чередуем 0 и 1
+
+                if (_isMouseOver && StatusToolTip.IsOpen)
                 {
-                    Rect.Fill = Brushes.DarkGreen;
-                    _count++;
-                }
-                else
-                {
-                    Rect.Fill = Brushes.SlateGray;
-                    _count = 0;
+                    UpdateToolTip();
                 }
             }
-            else
+            finally
             {
-                if (_count == 0)
-                {
-                    Rect.Fill = Brushes.DarkRed;
-                    _count++;
-                }
-                else
-                {
-                    Rect.Fill = Brushes.SlateGray;
-                    _count = 0;
-                }
-            }
-
-            if (_isMouseOver && StatusToolTip.IsOpen)
-            {
-                UpdateToolTip();
+                _isChecking = false;
             }
         }
+
+        private async Task<bool> CheckInternetConnectionAsync()
+        {
+            var tasks = Config.HostsToCheck.Select(host => PingIt.PingHostAsync(host)).ToArray();
+
+            await Task.WhenAll(tasks);
+
+            for (int i = 0; i < Config.HostsToCheck.Length; i++)
+            {
+                _pingResults[Config.HostsToCheck[i]] = tasks[i].Result;
+            }
+
+            return tasks.Any(t => t.Result >= 0);
+        }
+
+
+        private void UpdateToolTip()
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine("🌐 СТАТУС ИНТЕРНЕТА");
+            sb.AppendLine();
+
+            bool anyOnline = false;
+            foreach (var host in Config.HostsToCheck)
+            {
+                long pingTime = _pingResults.ContainsKey(host) ? _pingResults[host] : -1;
+                AppendPingResult(sb, host, pingTime);
+                if (pingTime >= 0) anyOnline = true;
+            }
+
+            sb.AppendLine();
+            sb.AppendLine($"📊 ОБЩИЙ СТАТУС: {(anyOnline ? "Онлайн" : "Оффлайн")}");
+            sb.Append($"⏰ {DateTime.Now:HH:mm:ss}");
+
+            ToolTipText.Text = sb.ToString();
+        }
+
+        private void AppendPingResult(StringBuilder sb, string hostName, long pingTime)
+        {
+            var result = new PingResult(pingTime >= 0, pingTime, hostName);
+            sb.AppendLine($"• {hostName}: {result}");
+        }
+
 
         private void Rect_MouseEnter(object sender, MouseEventArgs e)
         {
@@ -82,71 +124,6 @@ namespace MyInternetChecker
         {
             _isMouseOver = false;
             HideToolTip();
-        }
-
-        private void Rect_MouseMove(object sender, MouseEventArgs e)
-        {
-            if (_isMouseOver && StatusToolTip.IsOpen)
-            {
-                UpdateToolTip();
-            }
-        }
-
-        private void UpdateToolTip()
-        {
-            var yaRuResult = PingIt.PingHost("ya.ru");
-            var googleResult = PingIt.PingHost("google.com");
-
-            var sb = new StringBuilder();
-            sb.AppendLine("🌐 СТАТУС ИНТЕРНЕТА");
-            sb.AppendLine();
-
-            AppendPingResult(sb, "ya.ru", yaRuResult);
-            AppendPingResult(sb, "google.com", googleResult);
-
-            sb.AppendLine();
-            sb.AppendLine($"📊 ОБЩИЙ СТАТУС: {(yaRuResult.IsSuccess || googleResult.IsSuccess ? "Онлайн" : "Оффлайн")}");
-            sb.Append($"⏰ {DateTime.Now:HH:mm:ss}");
-
-            ToolTipText.Text = sb.ToString();
-        }
-
-        private void AppendPingResult(StringBuilder sb, string hostName, PingResult result)
-        {
-            if (result.IsSuccess)
-            {
-                string quality;
-                switch (result.RoundtripTime)
-                {
-                    case long r when r < 50:
-                        quality = "Отлично";
-                        break;
-                    case long r when r < 100:
-                        quality = "Хорошо";
-                        break;
-                    case long r when r < 200:
-                        quality = "Нормально";
-                        break;
-                    case long r when r < 500:
-                        quality = "Медленно";
-                        break;
-                    default:
-                        quality = "Очень медленно";
-                        break;
-                }
-
-                sb.AppendLine($"• {hostName}: {result.RoundtripTime} мс ({quality})");
-            }
-            else
-            {
-                sb.AppendLine($"• {hostName}: ❌ недоступен");
-            }
-        }
-
-        private bool CheckInternetConnection()
-        {
-            return PingIt.PingHost("ya.ru").IsSuccess || 
-                PingIt.PingHost("google.com").IsSuccess;
         }
 
         private void ShowToolTip()

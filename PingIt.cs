@@ -1,4 +1,5 @@
 ﻿using System.Net.NetworkInformation;
+using System.Threading.Tasks;
 
 namespace MyInternetChecker
 {
@@ -73,6 +74,21 @@ namespace MyInternetChecker
         public static bool PingHostSimple(string nameOrAddress)
         {
             return PingHost(nameOrAddress).IsSuccess;
+        }
+
+        public static async Task<long> PingHostAsync(string nameOrAddress)
+        {
+            try
+            {
+                using Ping pinger = new();
+                // Timeout 1000 мс, как и раньше. SendPingAsync не блокирует поток.
+                PingReply reply = await pinger.SendPingAsync(nameOrAddress, 1000);
+                return reply.Status == IPStatus.Success ? reply.RoundtripTime : -1;
+            }
+            catch (PingException)
+            {
+                return -1; // Любая ошибка = нет соединения
+            }
         }
     }
 }

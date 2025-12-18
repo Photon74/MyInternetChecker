@@ -16,7 +16,6 @@
                    Fill="White"
                    MouseEnter="Rect_MouseEnter"
                    MouseLeave="Rect_MouseLeave"
-                   MouseMove="Rect_MouseMove"
                    ToolTipService.ShowDuration="60000"
                    ToolTipService.InitialShowDelay="0"
                    ToolTipService.BetweenShowDelay="0">
