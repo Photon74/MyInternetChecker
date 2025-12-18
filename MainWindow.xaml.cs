@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
@@ -21,15 +22,21 @@ namespace MyInternetChecker
         private int _count = 0;
         private bool _isMouseOver = false;
         private bool _isChecking = false;
-        private long _lastYaRuPing = -1;
-        private long _lastGooglePing = -1;
-        private Dictionary<string, long> _pingResults = [];
+        private readonly Dictionary<string, long> _pingResults =new();
+        private CancellationTokenSource _cts;
 
         public MainWindow()
         {
             InitializeComponent();
-            Top = _screenHeight - this.ActualHeight;
-            Left = _screenWidth - _screenWidth;
+
+            _cts = new CancellationTokenSource();
+
+            Loaded += (s, e) =>
+            {
+                Top = _screenHeight - this.ActualHeight;
+                Left = _screenWidth - _screenWidth;
+            };
+            
 
             foreach (var host in Config.HostsToCheck)
             {
@@ -54,7 +61,7 @@ namespace MyInternetChecker
             _isChecking = true;
             try
             {
-                bool internetAvailable = await CheckInternetConnectionAsync();
+                var internetAvailable = await CheckInternetConnectionAsync();
                 Rect.Fill = internetAvailable
                     ? (_count == 0) ? Brushes.DarkGreen : Brushes.SlateGray
                     : (_count == 0) ? Brushes.DarkRed : Brushes.SlateGray;
@@ -73,7 +80,9 @@ namespace MyInternetChecker
 
         private async Task<bool> CheckInternetConnectionAsync()
         {
-            var tasks = Config.HostsToCheck.Select(host => PingIt.PingHostAsync(host)).ToArray();
+            var tasks = Config.HostsToCheck
+                .Select(host => PingIt.PingHostAsync(host, _cts.Token))
+                .ToArray();
 
             await Task.WhenAll(tasks);
 
@@ -92,10 +101,10 @@ namespace MyInternetChecker
             sb.AppendLine("🌐 СТАТУС ИНТЕРНЕТА");
             sb.AppendLine();
 
-            bool anyOnline = false;
+            var anyOnline = false;
             foreach (var host in Config.HostsToCheck)
             {
-                long pingTime = _pingResults.ContainsKey(host) ? _pingResults[host] : -1;
+                var pingTime = _pingResults.TryGetValue(host, out var time) ? time : -1;
                 AppendPingResult(sb, host, pingTime);
                 if (pingTime >= 0) anyOnline = true;
             }
@@ -112,7 +121,6 @@ namespace MyInternetChecker
             var result = new PingResult(pingTime >= 0, pingTime, hostName);
             sb.AppendLine($"• {hostName}: {result}");
         }
-
 
         private void Rect_MouseEnter(object sender, MouseEventArgs e)
         {
@@ -146,6 +154,7 @@ namespace MyInternetChecker
 
         protected override void OnClosed(EventArgs e)
         {
+            _cts?.Cancel();
             _timer?.Stop();
             base.OnClosed(e);
         }

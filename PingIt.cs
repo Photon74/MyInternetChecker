@@ -1,4 +1,6 @@
-﻿using System.Net.NetworkInformation;
+﻿using System;
+using System.Net.NetworkInformation;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace MyInternetChecker
@@ -20,16 +22,16 @@ namespace MyInternetChecker
 
         public string GetQualityDescription()
         {
-            if (!IsSuccess) return "Недоступен";
-
-            return RoundtripTime switch
-            {
-                long r when r < 50 => "Отлично",
-                long r when r < 100 => "Хорошо",
-                long r when r < 200 => "Нормально",
-                long r when r < 500 => "Медленно",
-                _ => "Очень медленно"
-            };
+            return !IsSuccess
+                ? "Недоступен"
+                : RoundtripTime switch
+                {
+                    long r when r < 50 => "Отлично",
+                    long r when r < 100 => "Хорошо",
+                    long r when r < 200 => "Нормально",
+                    long r when r < 500 => "Медленно",
+                    _ => "Очень медленно"
+                };
         }
 
         public override string ToString()
@@ -71,23 +73,23 @@ namespace MyInternetChecker
             return new PingResult(pingable, roundtripTime, nameOrAddress);
         }
 
-        public static bool PingHostSimple(string nameOrAddress)
-        {
-            return PingHost(nameOrAddress).IsSuccess;
-        }
-
-        public static async Task<long> PingHostAsync(string nameOrAddress)
+        public static async Task<long> PingHostAsync(string nameOrAddress, CancellationToken cancellationToken = default)
         {
             try
             {
                 using Ping pinger = new();
-                // Timeout 1000 мс, как и раньше. SendPingAsync не блокирует поток.
+                cancellationToken.ThrowIfCancellationRequested();
+
                 PingReply reply = await pinger.SendPingAsync(nameOrAddress, 1000);
                 return reply.Status == IPStatus.Success ? reply.RoundtripTime : -1;
             }
+            catch (OperationCanceledException)
+            {
+                return -1;
+            }
             catch (PingException)
             {
-                return -1; // Любая ошибка = нет соединения
+                return -1;
             }
         }
     }
