@@ -1,76 +1,75 @@
 ﻿using Microsoft.Win32;
 using System;
 
-namespace MyInternetChecker
+namespace MyInternetChecker;
+
+public static class AutoStartManager
 {
-    public static class AutoStartManager
+    private const string RegistryKeyPath = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Run";
+    private const string AppName = "MyInternetChecker";
+
+    public static bool IsAutoStartEnabled()
     {
-        private const string RegistryKeyPath = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Run";
-        private const string AppName = "MyInternetChecker";
-
-        public static bool IsAutoStartEnabled()
+        try
         {
-            try
-            {
-                using RegistryKey key = Registry.CurrentUser.OpenSubKey(RegistryKeyPath, false);
-                var value = key?.GetValue(AppName);
-                return value != null;
-            }
-            catch
-            {
-                return false;
-            }
+            using RegistryKey key = Registry.CurrentUser.OpenSubKey(RegistryKeyPath, false);
+            var value = key?.GetValue(AppName);
+            return value != null;
         }
-
-        public static void EnableAutoStart()
+        catch
         {
-            try
+            return false;
+        }
+    }
+
+    public static void EnableAutoStart()
+    {
+        try
+        {
+            using RegistryKey key = Registry.CurrentUser.OpenSubKey(RegistryKeyPath, true);
+            if (key != null)
             {
-                using RegistryKey key = Registry.CurrentUser.OpenSubKey(RegistryKeyPath, true);
-                if (key != null)
+                // Получаем путь к текущему исполняемому файлу
+                string executablePath = Environment.ProcessPath;
+
+                // Если путь содержит пробелы, заключаем в кавычки
+                if (executablePath.Contains(" "))
                 {
-                    // Получаем путь к текущему исполняемому файлу
-                    string executablePath = Environment.ProcessPath;
-
-                    // Если путь содержит пробелы, заключаем в кавычки
-                    if (executablePath.Contains(" "))
-                    {
-                        executablePath = $"\"{executablePath}\"";
-                    }
-
-                    key.SetValue(AppName, executablePath);
+                    executablePath = $"\"{executablePath}\"";
                 }
-            }
-            catch (Exception ex)
-            {
-                // Логируем ошибку, но не паникуем
-                System.Diagnostics.Debug.WriteLine($"Ошибка при включении автозапуска: {ex.Message}");
+
+                key.SetValue(AppName, executablePath);
             }
         }
-
-        public static void DisableAutoStart()
+        catch (Exception ex)
         {
-            try
-            {
-                using RegistryKey key = Registry.CurrentUser.OpenSubKey(RegistryKeyPath, true);
-                key?.DeleteValue(AppName, false);
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Ошибка при отключении автозапуска: {ex.Message}");
-            }
+            // Логируем ошибку, но не паникуем
+            System.Diagnostics.Debug.WriteLine($"Ошибка при включении автозапуска: {ex.Message}");
         }
+    }
 
-        public static void ToggleAutoStart()
+    public static void DisableAutoStart()
+    {
+        try
         {
-            if (IsAutoStartEnabled())
-            {
-                DisableAutoStart();
-            }
-            else
-            {
-                EnableAutoStart();
-            }
+            using RegistryKey key = Registry.CurrentUser.OpenSubKey(RegistryKeyPath, true);
+            key?.DeleteValue(AppName, false);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Ошибка при отключении автозапуска: {ex.Message}");
+        }
+    }
+
+    public static void ToggleAutoStart()
+    {
+        if (IsAutoStartEnabled())
+        {
+            DisableAutoStart();
+        }
+        else
+        {
+            EnableAutoStart();
         }
     }
 }
