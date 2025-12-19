@@ -53,7 +53,7 @@ public partial class MainWindow
     private void TimerStart()
     {
         _timer = new DispatcherTimer();
-        _timer.Tick += new EventHandler(TimerTick);
+        _timer.Tick += TimerTick;
         _timer.Interval = Config.CheckInterval;
         _timer.Start();
     }
@@ -90,14 +90,17 @@ public partial class MainWindow
             .Select(host => PingIt.PingHostAsync(host, _cts.Token))
             .ToArray();
 
-        await Task.WhenAll(tasks);
+        var results = await Task.WhenAll(tasks);
 
+        var any = false;
         for (var i = 0; i < hosts.Length; i++)
         {
-            _pingResults[hosts[i]] = tasks[i].Result;
+            _pingResults[hosts[i]] = results[i];
+            if (results[i] >= 0)
+                any = true;
         }
 
-        return tasks.Any(t => t.Result >= 0);
+        return any;
     }
 
     private void UpdateToolTip()
@@ -110,8 +113,11 @@ public partial class MainWindow
         foreach (var host in Config.HostsToCheck)
         {
             var pingTime = _pingResults.TryGetValue(host, out var time) ? time : -1;
+
             AppendPingResult(sb, host, pingTime);
-            if (pingTime >= 0) anyOnline = true;
+
+            if (pingTime >= 0)
+                anyOnline = true;
         }
 
         sb.AppendLine();
@@ -220,20 +226,18 @@ public partial class MainWindow
 
     private void ShowToolTip()
     {
-        if (!StatusToolTip.IsOpen)
-        {
-            StatusToolTip.PlacementTarget = Rect;
-            StatusToolTip.IsOpen = true;
-            UpdateToolTip();
-        }
+        if (StatusToolTip.IsOpen) return;
+
+        StatusToolTip.PlacementTarget = Rect;
+        StatusToolTip.IsOpen = true;
+        UpdateToolTip();
     }
 
     private void HideToolTip()
     {
-        if (StatusToolTip.IsOpen)
-        {
-            StatusToolTip.IsOpen = false;
-        }
+        if (!StatusToolTip.IsOpen) return;
+
+        StatusToolTip.IsOpen = false;
     }
 
     /// <summary>Освобождает ресурсы при закрытии окна</summary>
