@@ -13,11 +13,9 @@ public static class PingIt
     /// <returns>Результат пинга</returns>
     public static PingResult PingHost(string nameOrAddress)
     {
-        Ping pinger = null;
-
         try
         {
-            pinger = new Ping();
+            using var pinger = new Ping();
 
             for (var i = 0; i < 3; i++)
             {
@@ -29,10 +27,6 @@ public static class PingIt
         catch (PingException)
         {
             // Игнорируем исключения пинга
-        }
-        finally
-        {
-            pinger?.Dispose();
         }
 
         return new PingResult(false, 0, nameOrAddress);
