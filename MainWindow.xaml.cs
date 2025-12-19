@@ -22,7 +22,7 @@ namespace MyInternetChecker
         private int _count = 0;
         private bool _isMouseOver = false;
         private bool _isChecking = false;
-        private readonly Dictionary<string, long> _pingResults =new();
+        private Dictionary<string, long> _pingResults = new();
         private CancellationTokenSource _cts;
 
         public MainWindow()
@@ -31,20 +31,25 @@ namespace MyInternetChecker
 
             _cts = new CancellationTokenSource();
 
+            Rect.MouseRightButtonDown += (s, e) =>
+            {
+                RectContextMenu.IsOpen = true;
+            };
+
             Loaded += (s, e) =>
             {
-                Top = _screenHeight - this.ActualHeight;
+                Top = _screenHeight;
                 Left = _screenWidth - _screenWidth;
-            };
-            
 
-            foreach (var host in Config.HostsToCheck)
-            {
-                _pingResults[host] = -1;
-            }
+                UpdateAutoStartMenuItem();
+            };
+
+            UpdatePingResultsDictionary();
 
             TimerStart();
         }
+
+
 
         private void TimerStart()
         {
@@ -80,20 +85,21 @@ namespace MyInternetChecker
 
         private async Task<bool> CheckInternetConnectionAsync()
         {
-            var tasks = Config.HostsToCheck
+            var hosts = Config.HostsToCheck.ToArray();
+
+            var tasks = hosts
                 .Select(host => PingIt.PingHostAsync(host, _cts.Token))
                 .ToArray();
 
             await Task.WhenAll(tasks);
 
-            for (int i = 0; i < Config.HostsToCheck.Length; i++)
+            for (int i = 0; i < hosts.Length; i++)
             {
-                _pingResults[Config.HostsToCheck[i]] = tasks[i].Result;
+                _pingResults[hosts[i]] = tasks[i].Result;
             }
 
             return tasks.Any(t => t.Result >= 0);
         }
-
 
         private void UpdateToolTip()
         {
@@ -120,6 +126,85 @@ namespace MyInternetChecker
         {
             var result = new PingResult(pingTime >= 0, pingTime, hostName);
             sb.AppendLine($"• {hostName}: {result}");
+        }
+
+        private void SettingsMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            ShowSettingsWindow();
+        }
+
+        private void ExitMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            Close();
+        }
+
+        private async void ShowSettingsWindow()
+        {
+            // Блокируем проверку во время изменения настроек
+            _isChecking = true;
+
+            try
+            {
+                var settingsWindow = new HostsSettingsWindow();
+                settingsWindow.Owner = this;
+                settingsWindow.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+
+                if (settingsWindow.ShowDialog() == true)
+                {
+                    // Если настройки сохранены, перезагружаем хосты
+                    Config.ReloadHosts();
+                    UpdatePingResultsDictionary();
+
+                    // Обновляем ToolTip, если он открыт
+                    if (_isMouseOver && StatusToolTip.IsOpen)
+                    {
+                        UpdateToolTip();
+                    }
+
+                    // Сбрасываем счетчик для немедленного обновления цвета
+                    _count = 0;
+
+                    // Выполняем немедленную проверку с новыми хостами
+                    await CheckInternetConnectionAsync();
+
+                    // Обновляем цвет индикатора
+                    bool internetAvailable = _pingResults.Values.Any(v => v >= 0);
+                    Rect.Fill = internetAvailable ? Brushes.DarkGreen : Brushes.DarkRed;
+                }
+            }
+            finally
+            {
+                _isChecking = false;
+            }
+        }
+
+        private void UpdatePingResultsDictionary()
+        {
+            // Сохраняем старые результаты для тех хостов, которые остались
+            var newResults = new Dictionary<string, long>();
+
+            foreach (var host in Config.HostsToCheck)
+            {
+                newResults[host] = _pingResults.TryGetValue(host, out _) ? _pingResults[host] : -1;
+            }
+
+            _pingResults = newResults;
+        }
+
+        private void RectContextMenu_Opened(object sender, RoutedEventArgs e)
+        {
+            UpdateAutoStartMenuItem();
+        }
+
+        private void AutoStartMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            AutoStartManager.ToggleAutoStart();
+            UpdateAutoStartMenuItem();
+        }
+
+        private void UpdateAutoStartMenuItem()
+        {
+            AutoStartMenuItem.IsChecked = AutoStartManager.IsAutoStartEnabled();
         }
 
         private void Rect_MouseEnter(object sender, MouseEventArgs e)

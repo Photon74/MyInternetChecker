@@ -19,6 +19,17 @@
                    ToolTipService.ShowDuration="60000"
                    ToolTipService.InitialShowDelay="0"
                    ToolTipService.BetweenShowDelay="0">
+            <Rectangle.ContextMenu>
+                <ContextMenu x:Name="RectContextMenu" Opened="RectContextMenu_Opened">
+                    <MenuItem Header="Настройки хостов" Click="SettingsMenuItem_Click"/>
+                    <MenuItem Header="Автозапуск с Windows" 
+                        Click="AutoStartMenuItem_Click"
+                        IsCheckable="True"
+                        x:Name="AutoStartMenuItem"/>
+                    <Separator/>
+                    <MenuItem Header="Выход" Click="ExitMenuItem_Click"/>
+                </ContextMenu>
+            </Rectangle.ContextMenu>
             <Rectangle.ToolTip>
                 <ToolTip x:Name="StatusToolTip" 
                          Placement="Top" 
