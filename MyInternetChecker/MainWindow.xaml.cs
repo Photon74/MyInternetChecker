@@ -203,13 +203,13 @@ public partial class MainWindow
 
     private void AutoStartMenuItem_Click(object sender, RoutedEventArgs e)
     {
-        AutoStartManager.ToggleAutoStart();
+        AutoStartManager.IsAutoStartEnabled = !AutoStartManager.IsAutoStartEnabled;
         UpdateAutoStartMenuItem();
     }
 
     private void UpdateAutoStartMenuItem()
     {
-        AutoStartMenuItem.IsChecked = AutoStartManager.IsAutoStartEnabled();
+        AutoStartMenuItem.IsChecked = AutoStartManager.IsAutoStartEnabled;
     }
 
     private void Rect_MouseEnter(object sender, MouseEventArgs e)

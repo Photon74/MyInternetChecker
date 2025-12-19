@@ -1,81 +1,57 @@
-﻿using Microsoft.Win32;
+﻿#nullable enable
 using System;
+
+using Microsoft.Win32;
 
 namespace MyInternetChecker;
 
-// <summary>Управляет автозапуском приложения через реестр текущего пользователя</summary>
+/// <summary>Управляет автозапуском приложения через реестр текущего пользователя</summary>
 public static class AutoStartManager
 {
     private const string RegistryKeyPath = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Run";
     private const string AppName = "MyInternetChecker";
 
-    // <summary>Проверяет включен ли автозапуск</summary>
-    // <returns>true если автозапуск включен</returns>
-    public static bool IsAutoStartEnabled()
+    /// <summary>Возвращает или задаёт состояние автозапуска приложения</summary>
+    public static bool IsAutoStartEnabled
     {
-        try
+        get
         {
-            using var key = Registry.CurrentUser.OpenSubKey(RegistryKeyPath, false);
-            var value = key?.GetValue(AppName);
-            return value != null;
-        }
-        catch
-        {
-            return false;
-        }
-    }
-
-    // <summary>Включает автозапуск приложения</summary>
-    public static void EnableAutoStart()
-    {
-        try
-        {
-            using var key = Registry.CurrentUser.OpenSubKey(RegistryKeyPath, true);
-            if (key != null)
+            try
             {
-                // Получаем путь к текущему исполняемому файлу
-                var executablePath = Environment.ProcessPath;
-
-                // Если путь содержит пробелы, заключаем в кавычки
-                if (executablePath.Contains(" "))
-                {
-                    executablePath = $"\"{executablePath}\"";
-                }
-
-                key.SetValue(AppName, executablePath);
+                using var registry_key = Registry.CurrentUser.OpenSubKey(RegistryKeyPath, false);
+                var value = registry_key?.GetValue(AppName);
+                return value is not null;
+            }
+            catch
+            {
+                return false;
             }
         }
-        catch (Exception ex)
+        set
         {
-            // Логируем ошибку, но не паникуем
-            System.Diagnostics.Debug.WriteLine($"Ошибка при включении автозапуска: {ex.Message}");
-        }
-    }
-
-    // <summary>Выключает автозапуск приложения</summary>
-    public static void DisableAutoStart()
-    {
-        try
-        {
-            using var key = Registry.CurrentUser.OpenSubKey(RegistryKeyPath, true);
-            key?.DeleteValue(AppName, false);
-        }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Ошибка при отключении автозапуска: {ex.Message}");
-        }
-    }
-
-    // <summary>Переключает состояние автозапуска</summary>
-    public static void ToggleAutoStart()
-    {
-        if (IsAutoStartEnabled())
-        {
-            DisableAutoStart();
-        }
-        else
-        {
-            EnableAutoStart();
+            try
+            {
+                if (value)
+                {
+                    using var registry_key = Registry.CurrentUser.OpenSubKey(RegistryKeyPath, true);
+                    if (registry_key is not null)
+                    {
+                        var executable_path = Environment.ProcessPath;
+                        if (executable_path is not null && executable_path.Contains(' '))
+                            executable_path = $"\"{executable_path}\""; // окружить путь кавычками если есть пробелы
+                        registry_key.SetValue(AppName, executable_path);
+                    }
+                }
+                else
+                {
+                    using var registry_key = Registry.CurrentUser.OpenSubKey(RegistryKeyPath, true);
+                    registry_key?.DeleteValue(AppName, false); // удалить значение без исключения если нет
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Ошибка при изменении автозапуска: {ex.Message}");
+            }
         }
     }
 }
