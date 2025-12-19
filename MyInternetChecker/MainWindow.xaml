@@ -11,39 +11,40 @@
         ResizeMode="NoResize"
         Background="White" 
         Topmost="True">
-    <Grid Background="Black" >
+    <Grid Background="Black">
         <Rectangle x:Name="Rect" 
                    HorizontalAlignment="Center" 
                    Height="20" 
                    Stroke="Black" 
                    VerticalAlignment="Center" 
                    Width="20" 
-                   Fill="White"
+                   Fill="{Binding IndicatorFill}"
                    MouseEnter="Rect_MouseEnter"
                    MouseLeave="Rect_MouseLeave"
+                   MouseRightButtonDown="Rect_MouseRightButtonDown"
                    ToolTipService.ShowDuration="60000"
                    ToolTipService.InitialShowDelay="0"
                    ToolTipService.BetweenShowDelay="0">
             <Rectangle.ContextMenu>
                 <ContextMenu x:Name="RectContextMenu" Opened="RectContextMenu_Opened">
-                    <MenuItem Header="Настройки хостов" Click="SettingsMenuItem_Click"/>
+                    <MenuItem Header="Настройки хостов" Command="{Binding OpenHostsSettingsCommand}"/>
                     <MenuItem Header="Автозапуск с Windows" 
-                        Click="AutoStartMenuItem_Click"
-                        IsCheckable="True"
-                        x:Name="AutoStartMenuItem"/>
+                              Command="{Binding ToggleAutoStartCommand}"
+                              IsCheckable="True"
+                              IsChecked="{Binding IsAutoStartEnabled, Mode=OneWay}"/>
                     <Separator/>
-                    <MenuItem Header="Выход" Click="ExitMenuItem_Click"/>
+                    <MenuItem Header="Выход" Command="{Binding ExitCommand}"/>
                 </ContextMenu>
             </Rectangle.ContextMenu>
             <Rectangle.ToolTip>
                 <ToolTip x:Name="StatusToolTip" 
                          Placement="Top" 
                          StaysOpen="True"
-                         IsOpen="False"
+                         IsOpen="{Binding IsToolTipOpen}"
                          Background="WhiteSmoke"
                          Foreground="Black"
                          HasDropShadow="True">
-                    <TextBlock x:Name="ToolTipText" Text="Проверка состояния..." />
+                    <TextBlock x:Name="ToolTipText" Text="{Binding ToolTipText}" />
                 </ToolTip>
             </Rectangle.ToolTip>
         </Rectangle>
