@@ -9,7 +9,7 @@ using System.Windows.Input;
 
 namespace MyInternetChecker;
 
-public partial class HostsSettingsWindow : Window
+public partial class HostsSettingsWindow
 {
     private List<string> _allFileLines = new List<string>();
     private ObservableCollection<string> _hosts;
@@ -63,7 +63,7 @@ public partial class HostsSettingsWindow : Window
         try
         {
             // Убедимся, что папка существует (это у нас уже есть)
-            string directory = Path.GetDirectoryName(Config.SettingsFilePath);
+            var directory = Path.GetDirectoryName(Config.SettingsFilePath);
             if (!Directory.Exists(directory))
             {
                 Directory.CreateDirectory(directory);

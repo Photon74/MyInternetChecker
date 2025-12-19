@@ -28,8 +28,8 @@ internal class Config
     private static void TryMigrateOldSettings()
     {
         // Старый путь: рядом с исполняемым файлом (.exe)
-        string oldPath = Path.Combine(AppContext.BaseDirectory, "settings.txt");
-        string newPath = SettingsFilePath; // Новый путь в AppData
+        var oldPath = Path.Combine(AppContext.BaseDirectory, "settings.txt");
+        var newPath = SettingsFilePath; // Новый путь в AppData
 
         // Переносим только если старый файл ЕСТЬ, а нового еще НЕТ
         if (File.Exists(oldPath) && !File.Exists(newPath))
@@ -37,7 +37,7 @@ internal class Config
             try
             {
                 // Убедимся, что целевая папка существует
-                string newDirectory = Path.GetDirectoryName(newPath);
+                var newDirectory = Path.GetDirectoryName(newPath);
                 if (!Directory.Exists(newDirectory))
                 {
                     Directory.CreateDirectory(newDirectory);
@@ -77,7 +77,7 @@ internal class Config
             {
                 _hostsToCheck = GetDefaultHosts();
 
-                string directory = Path.GetDirectoryName(SettingsFilePath);
+                var directory = Path.GetDirectoryName(SettingsFilePath);
                 if (!Directory.Exists(directory))
                 {
                     Directory.CreateDirectory(directory);

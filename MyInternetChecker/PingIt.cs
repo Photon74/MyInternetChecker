@@ -46,14 +46,14 @@ public class PingIt
 {
     public static PingResult PingHost(string nameOrAddress)
     {
-        bool pingable = false;
-        long roundtripTime = 0;
+        var pingable = false;
+        var roundtripTime = 0L;
         Ping pinger = null;
 
         try
         {
             pinger = new Ping();
-            PingReply reply = pinger.Send(nameOrAddress, 1000);
+            var reply = pinger.Send(nameOrAddress, 1000);
             pingable = reply.Status == IPStatus.Success;
 
             if (pingable)
@@ -95,7 +95,7 @@ public class PingIt
             }
 
             // Пинг завершился
-            PingReply reply = await pingTask;
+            var reply = await pingTask;
             return reply.Status == IPStatus.Success ? reply.RoundtripTime : -1;
         }
         catch (OperationCanceledException)

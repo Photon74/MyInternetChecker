@@ -11,10 +11,7 @@ using System.Windows.Threading;
 
 namespace MyInternetChecker;
 
-/// <summary>
-/// Interaction logic for MainWindow.xaml
-/// </summary>
-public partial class MainWindow : Window
+public partial class MainWindow
 {
     private DispatcherTimer _timer = null;
     private readonly double _screenHeight = SystemParameters.FullPrimaryScreenHeight;
@@ -93,7 +90,7 @@ public partial class MainWindow : Window
 
         await Task.WhenAll(tasks);
 
-        for (int i = 0; i < hosts.Length; i++)
+        for (var i = 0; i < hosts.Length; i++)
         {
             _pingResults[hosts[i]] = tasks[i].Result;
         }
@@ -168,7 +165,7 @@ public partial class MainWindow : Window
                 await CheckInternetConnectionAsync();
 
                 // Обновляем цвет индикатора
-                bool internetAvailable = _pingResults.Values.Any(v => v >= 0);
+                var internetAvailable = _pingResults.Values.Any(v => v >= 0);
                 Rect.Fill = internetAvailable ? Brushes.DarkGreen : Brushes.DarkRed;
             }
         }

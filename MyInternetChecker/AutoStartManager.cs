@@ -12,7 +12,7 @@ public static class AutoStartManager
     {
         try
         {
-            using RegistryKey key = Registry.CurrentUser.OpenSubKey(RegistryKeyPath, false);
+            using var key = Registry.CurrentUser.OpenSubKey(RegistryKeyPath, false);
             var value = key?.GetValue(AppName);
             return value != null;
         }
@@ -26,11 +26,11 @@ public static class AutoStartManager
     {
         try
         {
-            using RegistryKey key = Registry.CurrentUser.OpenSubKey(RegistryKeyPath, true);
+            using var key = Registry.CurrentUser.OpenSubKey(RegistryKeyPath, true);
             if (key != null)
             {
                 // Получаем путь к текущему исполняемому файлу
-                string executablePath = Environment.ProcessPath;
+                var executablePath = Environment.ProcessPath;
 
                 // Если путь содержит пробелы, заключаем в кавычки
                 if (executablePath.Contains(" "))
@@ -52,7 +52,7 @@ public static class AutoStartManager
     {
         try
         {
-            using RegistryKey key = Registry.CurrentUser.OpenSubKey(RegistryKeyPath, true);
+            using var key = Registry.CurrentUser.OpenSubKey(RegistryKeyPath, true);
             key?.DeleteValue(AppName, false);
         }
         catch (Exception ex)
