@@ -4,8 +4,10 @@ using System.Linq;
 
 namespace MyInternetChecker;
 
+/// <summary>Хранит настройки приложения и обеспечивает доступ к списку хостов для проверки</summary>
 internal class Config
 {
+    /// <summary>Путь до файла настроек в папке AppData</summary>
     public static readonly string SettingsFilePath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
         "MyInternetChecker", // Имя папки для приложения
@@ -13,11 +15,15 @@ internal class Config
     );
 
     private static string[] _hostsToCheck;
+
+    /// <summary>Список хостов для проверки соединения</summary>
     public static string[] HostsToCheck => GetHosts();
 
+    /// <summary>Интервал между проверками</summary>
     public static readonly TimeSpan CheckInterval = TimeSpan.FromSeconds(1);
 
     // Добавляем метод для принудительной перезагрузки хостов
+    /// <summary>Принудительно перезагружает список хостов из файла настроек</summary>
     public static void ReloadHosts()
     {
         _hostsToCheck = null;

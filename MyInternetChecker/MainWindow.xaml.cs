@@ -11,6 +11,7 @@ using System.Windows.Threading;
 
 namespace MyInternetChecker;
 
+/// <summary>Главное окно приложения</summary>
 public partial class MainWindow
 {
     private DispatcherTimer _timer = null;
@@ -22,6 +23,7 @@ public partial class MainWindow
     private Dictionary<string, long> _pingResults = new();
     private readonly CancellationTokenSource _cts;
 
+    /// <summary>Инициализирует окно и запускает таймер проверки</summary>
     public MainWindow()
     {
         InitializeComponent();
@@ -234,6 +236,8 @@ public partial class MainWindow
         }
     }
 
+    /// <summary>Освобождает ресурсы при закрытии окна</summary>
+    /// <param name="e">Аргументы события закрытия</param>
     protected override void OnClosed(EventArgs e)
     {
         _cts?.Cancel();

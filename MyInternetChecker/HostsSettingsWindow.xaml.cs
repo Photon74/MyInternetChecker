@@ -9,17 +9,20 @@ using System.Windows.Input;
 
 namespace MyInternetChecker;
 
+/// <summary>Окно для редактирования списка хостов</summary>
 public partial class HostsSettingsWindow
 {
     private List<string> _allFileLines = new List<string>();
     private ObservableCollection<string> _hosts;
 
+    /// <summary>Инициализирует окно и загружает текущие хосты</summary>
     public HostsSettingsWindow()
     {
         InitializeComponent();
         LoadHosts();
     }
 
+    /// <summary>Загружает хосты из файла настроек</summary>
     private void LoadHosts()
     {
         try
@@ -58,6 +61,7 @@ public partial class HostsSettingsWindow
         NewHostTextBox.Focus();
     }
 
+    /// <summary>Сохраняет хосты в файл настроек</summary>
     private void SaveHosts()
     {
         try

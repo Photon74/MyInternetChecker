@@ -3,11 +3,14 @@ using System;
 
 namespace MyInternetChecker;
 
+// <summary>Управляет автозапуском приложения через реестр текущего пользователя</summary>
 public static class AutoStartManager
 {
     private const string RegistryKeyPath = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Run";
     private const string AppName = "MyInternetChecker";
 
+    // <summary>Проверяет включен ли автозапуск</summary>
+    // <returns>true если автозапуск включен</returns>
     public static bool IsAutoStartEnabled()
     {
         try
@@ -22,6 +25,7 @@ public static class AutoStartManager
         }
     }
 
+    // <summary>Включает автозапуск приложения</summary>
     public static void EnableAutoStart()
     {
         try
@@ -48,6 +52,7 @@ public static class AutoStartManager
         }
     }
 
+    // <summary>Выключает автозапуск приложения</summary>
     public static void DisableAutoStart()
     {
         try
@@ -61,6 +66,7 @@ public static class AutoStartManager
         }
     }
 
+    // <summary>Переключает состояние автозапуска</summary>
     public static void ToggleAutoStart()
     {
         if (IsAutoStartEnabled())
