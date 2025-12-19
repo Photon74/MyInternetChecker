@@ -78,9 +78,24 @@ namespace MyInternetChecker
             try
             {
                 using Ping pinger = new();
-                cancellationToken.ThrowIfCancellationRequested();
 
-                PingReply reply = await pinger.SendPingAsync(nameOrAddress, 1000);
+                // Создаем задачу пинга
+                var pingTask = pinger.SendPingAsync(nameOrAddress, 1000);
+
+                // Создаем задачу отмены
+                var cancellationTask = Task.Delay(Timeout.Infinite, cancellationToken);
+
+                // Ждем, какая задача завершится первой
+                var completedTask = await Task.WhenAny(pingTask, cancellationTask);
+
+                if (completedTask == cancellationTask)
+                {
+                    // Операция была отменена
+                    return -1;
+                }
+
+                // Пинг завершился
+                PingReply reply = await pingTask;
                 return reply.Status == IPStatus.Success ? reply.RoundtripTime : -1;
             }
             catch (OperationCanceledException)
