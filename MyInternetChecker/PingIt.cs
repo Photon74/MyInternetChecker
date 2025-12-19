@@ -54,7 +54,8 @@ public static class PingIt
                     var reply = await pinger.SendPingAsync(
                         nameOrAddress,
                         TimeSpan.FromMilliseconds(1000),
-                        cancellationToken: cancellationToken);
+                        cancellationToken: cancellationToken)
+                        .ConfigureAwait(false);
 
                     if (reply.Status == IPStatus.Success)
                         return reply.RoundtripTime;
