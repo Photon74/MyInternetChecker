@@ -4,6 +4,12 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MyInternetChecker"
+        xmlns:mvvm="clr-namespace:MyInternetChecker.Mvvm"
+        xmlns:vm="clr-namespace:MyInternetChecker.ViewModels"
+        mvvm:WindowLifetimeBehavior.LoadedCommand="{Binding OnLoaded}"
+        mvvm:WindowLifetimeBehavior.ClosedCommand="{Binding OnClosed}"
+        mvvm:WindowCloseBehavior.CloseRequested="{Binding RequestClose}"
+        mvvm:WindowService.HostsSettingsRequested="{Binding RequestHostsSettings}"
         Title="MainWindow" 
         Width="20" Height="20"
         WindowStyle="None" 
@@ -11,6 +17,11 @@
         ResizeMode="NoResize"
         Background="White" 
         Topmost="True">
+
+    <Window.DataContext>
+        <vm:MainWindowViewModel />
+    </Window.DataContext>
+
     <Grid Background="Black">
         <Rectangle x:Name="Rect" 
                    HorizontalAlignment="Center" 
@@ -19,14 +30,14 @@
                    VerticalAlignment="Center" 
                    Width="20" 
                    Fill="{Binding IndicatorFill}"
-                   MouseEnter="Rect_MouseEnter"
-                   MouseLeave="Rect_MouseLeave"
-                   MouseRightButtonDown="Rect_MouseRightButtonDown"
+                   mvvm:MouseOverBehavior.MouseEnterCommand="{Binding MouseEnterCommand}"
+                   mvvm:MouseOverBehavior.MouseLeaveCommand="{Binding MouseLeaveCommand}"
+                   mvvm:ContextMenuOpenBehavior.IsEnabled="True"
                    ToolTipService.ShowDuration="60000"
                    ToolTipService.InitialShowDelay="0"
                    ToolTipService.BetweenShowDelay="0">
             <Rectangle.ContextMenu>
-                <ContextMenu x:Name="RectContextMenu" Opened="RectContextMenu_Opened">
+                <ContextMenu mvvm:ContextMenuEventBehavior.OpenedCommand="{Binding ContextMenuOpenedCommand}">
                     <MenuItem Header="Настройки хостов" Command="{Binding OpenHostsSettingsCommand}"/>
                     <MenuItem Header="Автозапуск с Windows" 
                               Command="{Binding ToggleAutoStartCommand}"

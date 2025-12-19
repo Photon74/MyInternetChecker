@@ -14,13 +14,14 @@ public sealed class HostsSettingsViewModel : ViewModelBase
     private readonly ObservableCollection<string> _AllFileLines = new();
 
     private string _NewHost = string.Empty;
+    private bool? _DialogResult;
 
     public HostsSettingsViewModel()
     {
         AddHostCommand = new RelayCommand(AddNewHost);
         DeleteHostCommand = new RelayCommand<string>(DeleteHost);
-        SaveCommand = new RelayCommand(() => SaveRequested?.Invoke(this, EventArgs.Empty));
-        CancelCommand = new RelayCommand(() => CancelRequested?.Invoke(this, EventArgs.Empty));
+        SaveCommand = new RelayCommand(SaveAndClose);
+        CancelCommand = new RelayCommand(CancelAndClose);
 
         Load();
     }
@@ -31,14 +32,15 @@ public sealed class HostsSettingsViewModel : ViewModelBase
     /// <summary>Текст нового хоста</summary>
     public string NewHost { get => _NewHost; set => Set(ref _NewHost, value); }
 
+    /// <summary>Результат диалогового окна</summary>
+    public bool? DialogResult { get => _DialogResult; set => Set(ref _DialogResult, value); }
+
     public RelayCommand AddHostCommand { get; }
     public RelayCommand<string> DeleteHostCommand { get; }
     public RelayCommand SaveCommand { get; }
     public RelayCommand CancelCommand { get; }
 
     public event EventHandler<string>? ErrorOccurred;
-    public event EventHandler? SaveRequested;
-    public event EventHandler? CancelRequested;
 
     public void Load()
     {
@@ -79,13 +81,13 @@ public sealed class HostsSettingsViewModel : ViewModelBase
         }
     }
 
-    public void Save()
+    private void Save()
     {
         try
         {
-            var directory = Path.GetDirectoryName(Config.SettingsFilePath);
-            if (!Directory.Exists(directory))
-                Directory.CreateDirectory(directory!);
+            var directory_path = Path.GetDirectoryName(Config.SettingsFilePath);
+            if (!Directory.Exists(directory_path))
+                Directory.CreateDirectory(directory_path!);
 
             File.WriteAllLines(Config.SettingsFilePath, _AllFileLines);
         }
@@ -94,6 +96,14 @@ public sealed class HostsSettingsViewModel : ViewModelBase
             ErrorOccurred?.Invoke(this, $"Ошибка сохранения: {ex.Message}");
         }
     }
+
+    private void SaveAndClose()
+    {
+        Save();
+        DialogResult = true;
+    }
+
+    private void CancelAndClose() => DialogResult = false;
 
     private void AddNewHost()
     {

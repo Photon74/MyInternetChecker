@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Media;
 using System.Windows.Threading;
 
@@ -27,6 +28,8 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
     private Brush _IndicatorFill = Brushes.DarkRed;
     private string _ToolTipText = "Проверка состояния...";
     private bool _IsAutoStartEnabled;
+    private bool _RequestClose;
+    private bool _RequestHostsSettings;
 
     public MainWindowViewModel()
     {
@@ -36,9 +39,18 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
         _Timer.Tick += async (_, _) => await TimerTickAsync();
         _Timer.Start();
 
-        OpenHostsSettingsCommand = new RelayCommand(() => HostsSettingsRequested?.Invoke(this, EventArgs.Empty));
-        ExitCommand = new RelayCommand(() => ExitRequested?.Invoke(this, EventArgs.Empty));
+        OpenHostsSettingsCommand = new RelayCommand(RequestOpenHostsSettings);
+        ExitCommand = new RelayCommand(() => RequestClose = true);
         ToggleAutoStartCommand = new RelayCommand(ToggleAutoStart);
+
+        MouseEnterCommand = new RelayCommand(OnMouseEnter);
+        MouseLeaveCommand = new RelayCommand(OnMouseLeave);
+        ContextMenuOpenedCommand = new RelayCommand(RefreshAutoStartState);
+
+        OnLoaded = OnLoadedImpl;
+        OnClosed = Dispose;
+
+        RefreshAutoStartState();
     }
 
     /// <summary>Цвет индикатора статуса</summary>
@@ -53,27 +65,33 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
     /// <summary>Включён ли автозапуск</summary>
     public bool IsAutoStartEnabled { get => _IsAutoStartEnabled; set => Set(ref _IsAutoStartEnabled, value); }
 
+    /// <summary>Запрос закрыть окно</summary>
+    public bool RequestClose { get => _RequestClose; set => Set(ref _RequestClose, value); }
+
+    /// <summary>Запрос открыть окно настроек хостов</summary>
+    public bool RequestHostsSettings { get => _RequestHostsSettings; set => Set(ref _RequestHostsSettings, value); }
+
+    /// <summary>Действие при загрузке окна</summary>
+    public Action<Window>? OnLoaded { get; }
+
+    /// <summary>Действие при закрытии окна</summary>
+    public Action? OnClosed { get; }
+
     public RelayCommand OpenHostsSettingsCommand { get; }
     public RelayCommand ExitCommand { get; }
     public RelayCommand ToggleAutoStartCommand { get; }
 
-    public event EventHandler? HostsSettingsRequested;
-    public event EventHandler? ExitRequested;
+    public RelayCommand MouseEnterCommand { get; }
+    public RelayCommand MouseLeaveCommand { get; }
+    public RelayCommand ContextMenuOpenedCommand { get; }
 
-    public void OnContextMenuOpened() => RefreshAutoStartState();
-
-    public void OnMouseEnter()
+    private void OnLoadedImpl(Window Window)
     {
-        _IsMouseOver = true;
-        IsToolTipOpen = true;
-        UpdateToolTip();
+        Window.Top = SystemParameters.FullPrimaryScreenHeight;
+        Window.Left = SystemParameters.FullPrimaryScreenWidth - SystemParameters.FullPrimaryScreenWidth;
     }
 
-    public void OnMouseLeave()
-    {
-        _IsMouseOver = false;
-        IsToolTipOpen = false;
-    }
+    private void RequestOpenHostsSettings() => RequestHostsSettings = true;
 
     public async Task ApplyHostsChangedAsync()
     {
@@ -96,6 +114,19 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
     }
 
     private void RefreshAutoStartState() => IsAutoStartEnabled = AutoStartManager.IsAutoStartEnabled;
+
+    private void OnMouseEnter()
+    {
+        _IsMouseOver = true;
+        IsToolTipOpen = true;
+        UpdateToolTip();
+    }
+
+    private void OnMouseLeave()
+    {
+        _IsMouseOver = false;
+        IsToolTipOpen = false;
+    }
 
     private async Task TimerTickAsync()
     {
