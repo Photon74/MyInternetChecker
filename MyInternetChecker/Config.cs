@@ -4,8 +4,10 @@ using System.Linq;
 
 namespace MyInternetChecker;
 
+/// <summary>Хранит настройки приложения и обеспечивает доступ к списку хостов для проверки</summary>
 internal class Config
 {
+    /// <summary>Путь до файла настроек в папке AppData</summary>
     public static readonly string SettingsFilePath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
         "MyInternetChecker", // Имя папки для приложения
@@ -13,11 +15,15 @@ internal class Config
     );
 
     private static string[] _hostsToCheck;
+
+    /// <summary>Список хостов для проверки соединения</summary>
     public static string[] HostsToCheck => GetHosts();
 
+    /// <summary>Интервал между проверками</summary>
     public static readonly TimeSpan CheckInterval = TimeSpan.FromSeconds(1);
 
     // Добавляем метод для принудительной перезагрузки хостов
+    /// <summary>Принудительно перезагружает список хостов из файла настроек</summary>
     public static void ReloadHosts()
     {
         _hostsToCheck = null;
@@ -28,8 +34,8 @@ internal class Config
     private static void TryMigrateOldSettings()
     {
         // Старый путь: рядом с исполняемым файлом (.exe)
-        string oldPath = Path.Combine(AppContext.BaseDirectory, "settings.txt");
-        string newPath = SettingsFilePath; // Новый путь в AppData
+        var oldPath = Path.Combine(AppContext.BaseDirectory, "settings.txt");
+        var newPath = SettingsFilePath; // Новый путь в AppData
 
         // Переносим только если старый файл ЕСТЬ, а нового еще НЕТ
         if (File.Exists(oldPath) && !File.Exists(newPath))
@@ -37,7 +43,7 @@ internal class Config
             try
             {
                 // Убедимся, что целевая папка существует
-                string newDirectory = Path.GetDirectoryName(newPath);
+                var newDirectory = Path.GetDirectoryName(newPath);
                 if (!Directory.Exists(newDirectory))
                 {
                     Directory.CreateDirectory(newDirectory);
@@ -77,7 +83,7 @@ internal class Config
             {
                 _hostsToCheck = GetDefaultHosts();
 
-                string directory = Path.GetDirectoryName(SettingsFilePath);
+                var directory = Path.GetDirectoryName(SettingsFilePath);
                 if (!Directory.Exists(directory))
                 {
                     Directory.CreateDirectory(directory);
