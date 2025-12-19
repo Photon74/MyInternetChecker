@@ -1,6 +1,8 @@
 ﻿<Window x:Class="MyInternetChecker.HostsSettingsWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:mvvm="clr-namespace:MyInternetChecker.Mvvm"
+        xmlns:vm="clr-namespace:MyInternetChecker.ViewModels"
         Title="Хосты для проверки" 
         Height="250" 
         Width="350"
@@ -11,7 +13,12 @@
         Background="Transparent"
         ShowInTaskbar="False"
         Topmost="True"
-        MouseLeftButtonDown="Window_MouseLeftButtonDown">
+        mvvm:WindowDragBehavior.IsEnabled="True"
+        mvvm:DialogCloser.DialogResult="{Binding DialogResult}">
+
+    <Window.DataContext>
+        <vm:HostsSettingsViewModel />
+    </Window.DataContext>
 
     <Window.Resources>
         <!-- Стиль для круглой кнопки удаления -->
@@ -108,6 +115,7 @@
                                Margin="0,0,0,5"/>
 
                     <ListView x:Name="HostsListView" 
+                              ItemsSource="{Binding Hosts}"
                               ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                         <ListView.ItemTemplate>
                             <DataTemplate>
@@ -122,8 +130,8 @@
                                                Margin="5,2"/>
 
                                     <Button Grid.Column="1" 
-                                            Click="DeleteHostButton_Click"
-                                            Tag="{Binding}"
+                                            Command="{Binding DataContext.DeleteHostCommand, RelativeSource={RelativeSource AncestorType=ListView}}"
+                                            CommandParameter="{Binding}"
                                             Style="{StaticResource RoundDeleteButton}"
                                             Margin="2"/>
                                 </Grid>
@@ -140,11 +148,15 @@
                 <TextBox x:Name="NewHostTextBox" 
                          Width="250" 
                          Margin="0,0,5,0"
-                         KeyDown="NewHostTextBox_KeyDown"
-                         VerticalContentAlignment="Center"/>
+                         VerticalContentAlignment="Center"
+                         Text="{Binding NewHost, UpdateSourceTrigger=PropertyChanged}">
+                    <TextBox.InputBindings>
+                        <KeyBinding Key="Enter" Command="{Binding AddHostCommand}"/>
+                    </TextBox.InputBindings>
+                </TextBox>
                 <Button x:Name="AddHostButton" 
                         Content="+" 
-                        Click="AddHostButton_Click"
+                        Command="{Binding AddHostCommand}"
                         Width="30" 
                         Height="25"
                         FontWeight="Bold"
@@ -156,13 +168,13 @@
                         Orientation="Horizontal" 
                         HorizontalAlignment="Right">
                 <Button Content="Сохранить" 
-                        Click="SaveButton_Click" 
+                        Command="{Binding SaveCommand}"
                         Width="80" 
                         Height="25"
                         Margin="0,0,10,0"
                         Style="{StaticResource RoundedButton}"/>
                 <Button Content="Закрыть" 
-                        Click="CancelButton_Click" 
+                        Command="{Binding CancelCommand}"
                         Width="80"
                         Height="25"
                         Style="{StaticResource RoundedButton}"/>
