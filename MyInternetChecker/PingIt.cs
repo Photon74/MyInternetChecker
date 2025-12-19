@@ -5,55 +5,6 @@ using System.Threading.Tasks;
 
 namespace MyInternetChecker;
 
-/// <summary>Результат операции ping</summary>
-public class PingResult
-{
-    /// <summary>Флаг успешного ответа</summary>
-    public bool IsSuccess { get; }
-
-    /// <summary>Время в миллисекундах для roundtrip</summary>
-    public long RoundtripTime { get; }
-
-    /// <summary>Имя или адрес хоста</summary>
-    public string HostName { get; }
-
-    /// <summary>Инициализирует новый экземпляр результата ping</summary>
-    /// <param name="isSuccess">Флаг успешного ответа</param>
-    /// <param name="roundtripTime">Время roundtrip в миллисекундах</param>
-    /// <param name="hostName">Имя или адрес хоста</param>
-    public PingResult(bool isSuccess, long roundtripTime, string hostName = null)
-    {
-        IsSuccess = isSuccess;
-        RoundtripTime = roundtripTime;
-        HostName = hostName;
-    }
-
-    /// <summary>Получает текстовое описание качества соединения</summary>
-    /// <returns>Краткое текстовое описание качества</returns>
-    public string GetQualityDescription()
-    {
-        return !IsSuccess
-            ? "Недоступен"
-            : RoundtripTime switch
-            {
-                long r when r < 50 => "Отлично",
-                long r when r < 100 => "Хорошо",
-                long r when r < 200 => "Нормально",
-                long r when r < 500 => "Медленно",
-                _ => "Очень медленно"
-            };
-    }
-
-    /// <summary>Строковое представление результата ping</summary>
-    /// <returns>Строка с информацией о результате</returns>
-    public override string ToString()
-    {
-        return IsSuccess
-            ? $"{RoundtripTime} мс ({GetQualityDescription()})"
-            : "Недоступен";
-    }
-}
-
 /// <summary>Утилита для выполнения ping к хостам</summary>
 public static class PingIt
 {
