@@ -55,26 +55,24 @@ public class PingResult
 }
 
 /// <summary>Утилита для выполнения ping к хостам</summary>
-public class PingIt
+public static class PingIt
 {
     /// <summary>Синхронно пингует хост</summary>
     /// <param name="nameOrAddress">Имя или адрес хоста</param>
     /// <returns>Результат пинга</returns>
     public static PingResult PingHost(string nameOrAddress)
     {
-        var pingable = false;
-        var roundtripTime = 0L;
         Ping pinger = null;
 
         try
         {
             pinger = new Ping();
-            var reply = pinger.Send(nameOrAddress, 1000);
-            pingable = reply.Status == IPStatus.Success;
 
-            if (pingable)
+            for (var i = 0; i < 3; i++)
             {
-                roundtripTime = reply.RoundtripTime;
+                var reply = pinger.Send(nameOrAddress, 1000);
+                if (reply.Status == IPStatus.Success)
+                    return new PingResult(true, reply.RoundtripTime, nameOrAddress);
             }
         }
         catch (PingException)
@@ -86,7 +84,7 @@ public class PingIt
             pinger?.Dispose();
         }
 
-        return new PingResult(pingable, roundtripTime, nameOrAddress);
+        return new PingResult(false, 0, nameOrAddress);
     }
 
     /// <summary>Асинхронно пингует хост с поддержкой отмены</summary>
@@ -99,24 +97,31 @@ public class PingIt
         {
             using Ping pinger = new();
 
-            // Создаем задачу пинга
-            var pingTask = pinger.SendPingAsync(nameOrAddress, 1000);
-
-            // Создаем задачу отмены
-            var cancellationTask = Task.Delay(Timeout.Infinite, cancellationToken);
-
-            // Ждем, какая задача завершится первой
-            var completedTask = await Task.WhenAny(pingTask, cancellationTask);
-
-            if (completedTask == cancellationTask)
+            // Пытаемся выполнить пинг до 3 раз
+            for (var attempt = 0; attempt < 3; attempt++)
             {
-                // Операция была отменена
-                return -1;
+                // Проверяем отмену перед каждой попыткой
+                cancellationToken.ThrowIfCancellationRequested();
+
+                try
+                {
+                    // Выполняем пинг, передавая токен отмены напрямую
+                    var reply = await pinger.SendPingAsync(
+                        nameOrAddress,
+                        TimeSpan.FromMilliseconds(1000),
+                        cancellationToken: cancellationToken);
+
+                    if (reply.Status == IPStatus.Success)
+                        return reply.RoundtripTime;
+                    // если неуспешно — повторим попытку
+                }
+                catch (PingException)
+                {
+                    // При исключении пинга пробуем ещё раз
+                }
             }
 
-            // Пинг завершился
-            var reply = await pingTask;
-            return reply.Status == IPStatus.Success ? reply.RoundtripTime : -1;
+            return -1;
         }
         catch (OperationCanceledException)
         {
