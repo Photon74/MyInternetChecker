@@ -1,4 +1,5 @@
-﻿using System;
+﻿using MyInternetChecker.Config;
+using System;
 using System.Net.NetworkInformation;
 using System.Threading;
 using System.Threading.Tasks;
@@ -16,10 +17,11 @@ public static class PingIt
         try
         {
             using var pinger = new Ping();
+            var settings = ConfigManager.Ping;
 
-            for (var i = 0; i < 3; i++)
+            for (var i = 0; i < settings.Attempts; i++)
             {
-                var reply = pinger.Send(nameOrAddress, 1000);
+                var reply = pinger.Send(nameOrAddress, settings.Timeout);
                 if (reply.Status == IPStatus.Success)
                     return new PingResult(true, reply.RoundtripTime, nameOrAddress);
             }
@@ -41,9 +43,10 @@ public static class PingIt
         try
         {
             using Ping pinger = new();
+            var settings = ConfigManager.Ping;
 
-            // Пытаемся выполнить пинг до 3 раз
-            for (var attempt = 0; attempt < 3; attempt++)
+            // Пытаемся выполнить пинг указанное количество раз
+            for (var attempt = 0; attempt < settings.Attempts; attempt++)
             {
                 // Проверяем отмену перед каждой попыткой
                 cancellationToken.ThrowIfCancellationRequested();
@@ -53,7 +56,7 @@ public static class PingIt
                     // Выполняем пинг, передавая токен отмены напрямую
                     var reply = await pinger.SendPingAsync(
                         nameOrAddress,
-                        TimeSpan.FromMilliseconds(1000),
+                        TimeSpan.FromMilliseconds(settings.Timeout),
                         cancellationToken: cancellationToken)
                         .ConfigureAwait(false);
 

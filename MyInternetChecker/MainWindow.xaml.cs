@@ -1,4 +1,5 @@
-﻿using System;
+﻿using MyInternetChecker.Config;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -58,15 +59,13 @@ public partial class MainWindow
             Rect.Fill = Brushes.Gray;
         };
 
-        UpdatePingResultsDictionary();
-
         TimerStart();
     }
 
     private void LoadWindowPosition()
     {
-        var savedPosition = WindowPositionManager.LoadWindowPosition();
-        if (savedPosition != null)
+        var iniPosition = ConfigManager.Window;
+        if (iniPosition.Left != 0 || iniPosition.Top != 0)
         {
             // Проверяем, что окно будет в пределах видимой области
             var virtualScreenWidth = SystemParameters.VirtualScreenWidth;
@@ -74,11 +73,10 @@ public partial class MainWindow
             var virtualScreenLeft = SystemParameters.VirtualScreenLeft;
             var virtualScreenTop = SystemParameters.VirtualScreenTop;
 
-            // Корректируем позицию, если она за пределами экрана
-            double left = savedPosition.Left;
-            double top = savedPosition.Top;
+            // Корректируем позицию
+            double left = iniPosition.Left;
+            double top = iniPosition.Top;
 
-            // Проверяем, чтобы окно не выходило за пределы экрана
             if (left < virtualScreenLeft)
                 left = virtualScreenLeft;
             else if (left + Width > virtualScreenLeft + virtualScreenWidth)
@@ -91,24 +89,20 @@ public partial class MainWindow
 
             Left = left;
             Top = top;
-        }
-        else
-        {
-            Top = _screenHeight;
-            Left = _screenWidth - _screenWidth;
+            return;
         }
     }
 
     private void SaveWindowPosition()
     {
-        WindowPositionManager.SaveWindowPosition(this);
+        ConfigManager.SaveWindowPosition(this.Left, this.Top);
     }
 
     private void TimerStart()
     {
         _timer = new DispatcherTimer();
         _timer.Tick += TimerTick;
-        _timer.Interval = Config.CheckInterval;
+        _timer.Interval = ConfigManager.CheckInterval;
         _timer.Start();
     }
 
@@ -154,7 +148,7 @@ public partial class MainWindow
 
     private async Task<bool> CheckInternetConnectionAsync()
     {
-        var hosts = Config.HostsToCheck.ToArray();
+        var hosts = ConfigManager.Hosts.ToArray();
 
         var tasks = hosts
             .Select(host => PingIt.PingHostAsync(host, _cts.Token))
@@ -180,7 +174,7 @@ public partial class MainWindow
         sb.AppendLine();
 
         var anyOnline = false;
-        foreach (var host in Config.HostsToCheck)
+        foreach (var host in ConfigManager.Hosts)
         {
             var pingTime = _pingResults.TryGetValue(host, out var time) ? time : -1;
 
@@ -230,8 +224,8 @@ public partial class MainWindow
                 _cts?.Dispose();
                 _cts = new CancellationTokenSource();
 
-                Config.ReloadHosts();
-                UpdatePingResultsDictionary();
+                ConfigManager.Reload();
+                //UpdatePingResultsDictionary();
 
                 // Немедленная проверка
                 _timer?.Stop();
@@ -253,19 +247,6 @@ public partial class MainWindow
                 _cts = new CancellationTokenSource();
             }
         }
-    }
-
-    private void UpdatePingResultsDictionary()
-    {
-        // Сохраняем старые результаты для тех хостов, которые остались
-        var newResults = new Dictionary<string, long>();
-
-        foreach (var host in Config.HostsToCheck)
-        {
-            newResults[host] = _pingResults.TryGetValue(host, out _) ? _pingResults[host] : -1;
-        }
-
-        _pingResults = newResults;
     }
 
     private void RectContextMenu_Opened(object sender, RoutedEventArgs e)
@@ -375,14 +356,8 @@ public partial class MainWindow
     /// <summary>Останавливает все анимации</summary>
     private void StopAllAnimations()
     {
-        if (_onlineAnimation != null)
-        {
-            _onlineAnimation.Stop(Rect);
-        }
-        if (_offlineAnimation != null)
-        {
-            _offlineAnimation.Stop(Rect);
-        }
+        _onlineAnimation?.Stop(Rect);
+        _offlineAnimation?.Stop(Rect);
 
         // Сбрасываем анимационные свойства
         Rect.BeginAnimation(Rectangle.FillProperty, null);

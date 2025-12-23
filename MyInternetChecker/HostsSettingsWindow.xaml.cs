@@ -1,7 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using MyInternetChecker.Config;
+using System;
 using System.Collections.ObjectModel;
-using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -12,7 +11,6 @@ namespace MyInternetChecker;
 /// <summary>Окно для редактирования списка хостов</summary>
 public partial class HostsSettingsWindow
 {
-    private List<string> _allFileLines = new List<string>();
     private ObservableCollection<string> _hosts;
 
     /// <summary>Инициализирует окно и загружает текущие хосты</summary>
@@ -27,26 +25,7 @@ public partial class HostsSettingsWindow
     {
         try
         {
-            _allFileLines.Clear();
-
-            if (File.Exists(Config.SettingsFilePath))
-            {
-                _allFileLines = File.ReadAllLines(Config.SettingsFilePath).ToList();
-
-
-                var lines = _allFileLines
-                    .Select(line => line.Trim())
-                    .Where(line => !string.IsNullOrEmpty(line) && !line.StartsWith("#"))
-                    .ToList();
-
-                _hosts = new ObservableCollection<string>(lines);
-            }
-            else
-            {
-                _hosts = new ObservableCollection<string> { "ya.ru", "google.com" };
-                _allFileLines = new List<string> { "ya.ru", "google.com" };
-            }
-
+            _hosts = new ObservableCollection<string>(ConfigManager.Hosts);
             HostsListView.ItemsSource = _hosts;
         }
         catch (Exception ex)
@@ -54,7 +33,6 @@ public partial class HostsSettingsWindow
             MessageBox.Show($"Ошибка загрузки настроек: {ex.Message}", "Ошибка",
                 MessageBoxButton.OK, MessageBoxImage.Error);
             _hosts = new ObservableCollection<string>();
-            _allFileLines = new List<string>();
             HostsListView.ItemsSource = _hosts;
         }
 
@@ -66,16 +44,7 @@ public partial class HostsSettingsWindow
     {
         try
         {
-            // Убедимся, что папка существует (это у нас уже есть)
-            var directory = Path.GetDirectoryName(Config.SettingsFilePath);
-            if (!Directory.Exists(directory))
-            {
-                Directory.CreateDirectory(directory);
-            }
-
-            // СОХРАНЯЕМ ПОЛНЫЙ СПИСОК ВСЕХ СТРОК, ВКЛЮЧАЯ КОММЕНТАРИИ
-            File.WriteAllLines(Config.SettingsFilePath, _allFileLines);
-
+            ConfigManager.SaveHosts(_hosts.ToArray());
             DialogResult = true;
             Close();
         }
@@ -117,7 +86,6 @@ public partial class HostsSettingsWindow
         }
 
         _hosts.Add(newHost);
-        _allFileLines.Add(newHost);
         NewHostTextBox.Clear();
         NewHostTextBox.Focus();
     }
@@ -126,16 +94,7 @@ public partial class HostsSettingsWindow
     {
         if (sender is Button button && button.Tag is string hostToDelete)
         {
-            // 1. Удаляем хост из списка для отображения
             _hosts.Remove(hostToDelete);
-
-            // 2. Находим и удаляем строку с этим хостом из общего списка
-            // Ищем строку, которая после очистки от пробелов совпадает с именем хоста
-            var lineToDelete = _allFileLines.FirstOrDefault(line => line.Trim() == hostToDelete);
-            if (lineToDelete != null)
-            {
-                _allFileLines.Remove(lineToDelete);
-            }
         }
     }
 
