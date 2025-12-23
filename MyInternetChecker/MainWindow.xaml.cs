@@ -7,6 +7,8 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
+using System.Windows.Shapes;
 using System.Windows.Threading;
 
 namespace MyInternetChecker;
@@ -21,7 +23,15 @@ public partial class MainWindow
     private bool _isMouseOver = false;
     private bool _isChecking = false;
     private Dictionary<string, long> _pingResults = new();
-    private readonly CancellationTokenSource _cts;
+    private CancellationTokenSource _cts;
+
+    // Переменные для анимаций
+    private Storyboard _onlineAnimation;
+    private Storyboard _offlineAnimation;
+    private bool _wasOnline = false; // Для отслеживания предыдущего состояния
+
+    private bool _isDragging = false;
+    private Point _dragStartPoint;
 
     /// <summary>Инициализирует окно и запускает таймер проверки</summary>
     public MainWindow()
@@ -30,6 +40,10 @@ public partial class MainWindow
 
         _cts = new CancellationTokenSource();
 
+        // Загружаем анимации из ресурсов
+        _onlineAnimation = (Storyboard)FindResource("OnlineAnimation");
+        _offlineAnimation = (Storyboard)FindResource("OfflineAnimation");
+
         Rect.MouseRightButtonDown += (s, e) =>
         {
             RectContextMenu.IsOpen = true;
@@ -37,10 +51,11 @@ public partial class MainWindow
 
         Loaded += (s, e) =>
         {
-            Top = _screenHeight;
-            Left = _screenWidth - _screenWidth;
-
+            LoadWindowPosition();
             UpdateAutoStartMenuItem();
+
+            // Устанавливаем начальный цвет (серый, пока не проверили)
+            Rect.Fill = Brushes.Gray;
         };
 
         UpdatePingResultsDictionary();
@@ -48,7 +63,46 @@ public partial class MainWindow
         TimerStart();
     }
 
+    private void LoadWindowPosition()
+    {
+        var savedPosition = WindowPositionManager.LoadWindowPosition();
+        if (savedPosition != null)
+        {
+            // Проверяем, что окно будет в пределах видимой области
+            var virtualScreenWidth = SystemParameters.VirtualScreenWidth;
+            var virtualScreenHeight = SystemParameters.VirtualScreenHeight;
+            var virtualScreenLeft = SystemParameters.VirtualScreenLeft;
+            var virtualScreenTop = SystemParameters.VirtualScreenTop;
 
+            // Корректируем позицию, если она за пределами экрана
+            double left = savedPosition.Left;
+            double top = savedPosition.Top;
+
+            // Проверяем, чтобы окно не выходило за пределы экрана
+            if (left < virtualScreenLeft)
+                left = virtualScreenLeft;
+            else if (left + Width > virtualScreenLeft + virtualScreenWidth)
+                left = virtualScreenLeft + virtualScreenWidth - Width;
+
+            if (top < virtualScreenTop)
+                top = virtualScreenTop;
+            else if (top + Height > virtualScreenTop + virtualScreenHeight)
+                top = virtualScreenTop + virtualScreenHeight - Height;
+
+            Left = left;
+            Top = top;
+        }
+        else
+        {
+            Top = _screenHeight;
+            Left = _screenWidth - _screenWidth;
+        }
+    }
+
+    private void SaveWindowPosition()
+    {
+        WindowPositionManager.SaveWindowPosition(this);
+    }
 
     private void TimerStart()
     {
@@ -66,10 +120,26 @@ public partial class MainWindow
         try
         {
             var internetAvailable = await CheckInternetConnectionAsync();
-            Rect.Fill = internetAvailable
-                ? (_count == 0) ? Brushes.DarkGreen : Brushes.SlateGray
-                : (_count == 0) ? Brushes.DarkRed : Brushes.SlateGray;
-            _count = (_count + 1) % 2; // Чередуем 0 и 1
+            if (internetAvailable != _wasOnline)
+            {
+                // Останавливаем текущую анимацию
+                StopAllAnimations();
+
+                if (internetAvailable)
+                {
+                    StartOnlineAnimation();
+                }
+                else
+                {
+                    StartOfflineAnimation();
+                }
+
+                _wasOnline = internetAvailable;
+            }
+            //Rect.Fill = internetAvailable
+            //    ? (_count == 0) ? Brushes.DarkGreen : Brushes.SlateGray
+            //    : (_count == 0) ? Brushes.DarkRed : Brushes.SlateGray;
+            //_count = (_count + 1) % 2; // Чередуем 0 и 1
 
             if (_isMouseOver && StatusToolTip.IsOpen)
             {
@@ -145,8 +215,8 @@ public partial class MainWindow
 
     private async void ShowSettingsWindow()
     {
-        // Блокируем проверку во время изменения настроек
-        _isChecking = true;
+        // Отменяем текущие операции
+        _cts?.Cancel();
 
         try
         {
@@ -156,30 +226,32 @@ public partial class MainWindow
 
             if (settingsWindow.ShowDialog() == true)
             {
-                // Если настройки сохранены, перезагружаем хосты
+                // Создаем новый токен после отмены
+                _cts?.Dispose();
+                _cts = new CancellationTokenSource();
+
                 Config.ReloadHosts();
                 UpdatePingResultsDictionary();
 
-                // Обновляем ToolTip, если он открыт
-                if (_isMouseOver && StatusToolTip.IsOpen)
-                {
-                    UpdateToolTip();
-                }
-
-                // Сбрасываем счетчик для немедленного обновления цвета
-                _count = 0;
-
-                // Выполняем немедленную проверку с новыми хостами
+                // Немедленная проверка
+                _timer?.Stop();
                 await CheckInternetConnectionAsync();
+                UpdateToolTip();
 
-                // Обновляем цвет индикатора
                 var internetAvailable = _pingResults.Values.Any(v => v >= 0);
                 Rect.Fill = internetAvailable ? Brushes.DarkGreen : Brushes.DarkRed;
+
+                _timer?.Start();
             }
         }
         finally
         {
-            _isChecking = false;
+            // Восстанавливаем токен, если был отменен
+            if (_cts?.IsCancellationRequested == true)
+            {
+                _cts?.Dispose();
+                _cts = new CancellationTokenSource();
+            }
         }
     }
 
@@ -240,10 +312,89 @@ public partial class MainWindow
         StatusToolTip.IsOpen = false;
     }
 
+    // Обработчики для перемещения окна
+    private void Window_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (e.ButtonState == MouseButtonState.Pressed && e.ChangedButton == MouseButton.Left)
+        {
+            _isDragging = true;
+            _dragStartPoint = e.GetPosition(this);
+            CaptureMouse();  // Захватываем мышь для отслеживания вне окна
+        }
+    }
+
+    private void Window_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+    {
+        if (_isDragging && e.ChangedButton == MouseButton.Left)
+        {
+            _isDragging = false;
+            ReleaseMouseCapture();  // Освобождаем захват мыши
+
+            // Сохраняем позицию при отпускании ЛКМ
+            SaveWindowPosition();
+        }
+    }
+
+    // Также обрабатываем перемещение мыши для drag&drop
+    protected override void OnMouseMove(MouseEventArgs e)
+    {
+        base.OnMouseMove(e);
+
+        if (_isDragging && e.LeftButton == MouseButtonState.Pressed)
+        {
+            var currentPosition = e.GetPosition(this);
+            var delta = currentPosition - _dragStartPoint;
+
+            Left += delta.X;
+            Top += delta.Y;
+        }
+    }
+
+    /// <summary>Запускает анимацию для онлайн состояния</summary>
+    private void StartOnlineAnimation()
+    {
+        if (_onlineAnimation != null)
+        {
+            // Убедимся, что цвет установлен в начальное состояние
+            Rect.Fill = new SolidColorBrush(Colors.DarkGreen);
+            _onlineAnimation.Begin(Rect, true);
+        }
+    }
+
+    /// <summary>Запускает анимацию для оффлайн состояния</summary>
+    private void StartOfflineAnimation()
+    {
+        if (_offlineAnimation != null)
+        {
+            // Убедимся, что цвет установлен в начальное состояние
+            Rect.Fill = new SolidColorBrush(Colors.DarkRed);
+            _offlineAnimation.Begin(Rect, true);
+        }
+    }
+
+    /// <summary>Останавливает все анимации</summary>
+    private void StopAllAnimations()
+    {
+        if (_onlineAnimation != null)
+        {
+            _onlineAnimation.Stop(Rect);
+        }
+        if (_offlineAnimation != null)
+        {
+            _offlineAnimation.Stop(Rect);
+        }
+
+        // Сбрасываем анимационные свойства
+        Rect.BeginAnimation(Rectangle.FillProperty, null);
+    }
+
     /// <summary>Освобождает ресурсы при закрытии окна</summary>
     /// <param name="e">Аргументы события закрытия</param>
     protected override void OnClosed(EventArgs e)
     {
+        SaveWindowPosition();
+
+        StopAllAnimations();
         _cts?.Cancel();
         _timer?.Stop();
         base.OnClosed(e);

@@ -22,43 +22,11 @@ internal class Config
     /// <summary>Интервал между проверками</summary>
     public static readonly TimeSpan CheckInterval = TimeSpan.FromSeconds(1);
 
-    // Добавляем метод для принудительной перезагрузки хостов
     /// <summary>Принудительно перезагружает список хостов из файла настроек</summary>
     public static void ReloadHosts()
     {
         _hostsToCheck = null;
         GetHosts(); // Загружаем заново
-    }
-
-    // Метод для переноса старых настроек из папки с программой в AppData
-    private static void TryMigrateOldSettings()
-    {
-        // Старый путь: рядом с исполняемым файлом (.exe)
-        var oldPath = Path.Combine(AppContext.BaseDirectory, "settings.txt");
-        var newPath = SettingsFilePath; // Новый путь в AppData
-
-        // Переносим только если старый файл ЕСТЬ, а нового еще НЕТ
-        if (File.Exists(oldPath) && !File.Exists(newPath))
-        {
-            try
-            {
-                // Убедимся, что целевая папка существует
-                var newDirectory = Path.GetDirectoryName(newPath);
-                if (!Directory.Exists(newDirectory))
-                {
-                    Directory.CreateDirectory(newDirectory);
-                }
-                File.Copy(oldPath, newPath);
-                Console.WriteLine($"Настройки перенесены в: {newPath}");
-                // Файл в старой папке можно оставить или удалить
-                // File.Delete(oldPath);
-            }
-            catch (Exception ex)
-            {
-                // Если не получилось - не страшно, просто пишем в лог
-                Console.WriteLine($"Не удалось перенести настройки: {ex.Message}");
-            }
-        }
     }
 
     private static string[] GetHosts()
@@ -101,5 +69,37 @@ internal class Config
         return _hostsToCheck;
     }
 
-    private static string[] GetDefaultHosts() => new[] { "ya.ru", "google.com" };
+    private static string[] GetDefaultHosts() => new[] { "ya.ru", "google.com" };   
+
+
+    // Метод для переноса старых настроек из папки с программой в AppData
+    private static void TryMigrateOldSettings()
+    {
+        // Старый путь: рядом с исполняемым файлом (.exe)
+        var oldPath = Path.Combine(AppContext.BaseDirectory, "settings.txt");
+        var newPath = SettingsFilePath; // Новый путь в AppData
+
+        // Переносим только если старый файл ЕСТЬ, а нового еще НЕТ
+        if (File.Exists(oldPath) && !File.Exists(newPath))
+        {
+            try
+            {
+                // Убедимся, что целевая папка существует
+                var newDirectory = Path.GetDirectoryName(newPath);
+                if (!Directory.Exists(newDirectory))
+                {
+                    Directory.CreateDirectory(newDirectory);
+                }
+                File.Copy(oldPath, newPath);
+                Console.WriteLine($"Настройки перенесены в: {newPath}");
+                // Файл в старой папке можно оставить или удалить
+                // File.Delete(oldPath);
+            }
+            catch (Exception ex)
+            {
+                // Если не получилось - не страшно, просто пишем в лог
+                Console.WriteLine($"Не удалось перенести настройки: {ex.Message}");
+            }
+        }
+    }
 }
