@@ -10,7 +10,27 @@
         ShowInTaskbar="False" 
         ResizeMode="NoResize"
         Background="White" 
-        Topmost="True">
+        Topmost="True"
+        MouseLeftButtonDown="Window_MouseLeftButtonDown"
+        MouseLeftButtonUp="Window_MouseLeftButtonUp">
+    <!-- Ресурсы для анимаций -->
+    <Window.Resources>
+        <!-- Анимация для онлайн состояния: плавная пульсация зеленого -->
+        <Storyboard x:Key="OnlineAnimation" RepeatBehavior="Forever">
+            <ColorAnimation Storyboard.TargetProperty="(Rectangle.Fill).(SolidColorBrush.Color)"
+                            From="#FF006400" To="#FF32CD32" Duration="0:0:2"
+                            AutoReverse="True"
+                            EasingFunction="{x:Null}"/>
+        </Storyboard>
+
+        <!-- Анимация для оффлайн состояния: активная пульсация красного -->
+        <Storyboard x:Key="OfflineAnimation" RepeatBehavior="Forever">
+            <ColorAnimation Storyboard.TargetProperty="(Rectangle.Fill).(SolidColorBrush.Color)"
+                            From="#FF8B0000" To="#FFFF4500" Duration="0:0:0.5"
+                            AutoReverse="True"
+                            EasingFunction="{x:Null}"/>
+        </Storyboard>
+    </Window.Resources>
     <Grid Background="Black" >
         <Rectangle x:Name="Rect" 
                    HorizontalAlignment="Center" 
