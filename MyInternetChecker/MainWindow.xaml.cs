@@ -130,10 +130,6 @@ public partial class MainWindow
 
                 _wasOnline = internetAvailable;
             }
-            //Rect.Fill = internetAvailable
-            //    ? (_count == 0) ? Brushes.DarkGreen : Brushes.SlateGray
-            //    : (_count == 0) ? Brushes.DarkRed : Brushes.SlateGray;
-            //_count = (_count + 1) % 2; // Чередуем 0 и 1
 
             if (_isMouseOver && StatusToolTip.IsOpen)
             {
@@ -160,6 +156,9 @@ public partial class MainWindow
         for (var i = 0; i < hosts.Length; i++)
         {
             _pingResults[hosts[i]] = results[i];
+
+            HistoryManager.AddPingResult(hosts[i], results[i]);
+
             if (results[i] >= 0)
                 any = true;
         }
@@ -195,6 +194,14 @@ public partial class MainWindow
     {
         var result = new PingResult(pingTime >= 0, pingTime, hostName);
         sb.AppendLine($"• {hostName}: {result}");
+    }
+
+    // В MainWindow.xaml.cs
+    private void ShowHistory_Click(object sender, RoutedEventArgs e)
+    {
+        var historyWindow = new HistoryWindow();
+        historyWindow.Owner = this;
+        historyWindow.Show();
     }
 
     private void SettingsMenuItem_Click(object sender, RoutedEventArgs e)

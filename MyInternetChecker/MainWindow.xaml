@@ -46,6 +46,7 @@
                    ToolTipService.BetweenShowDelay="0">
             <Rectangle.ContextMenu>
                 <ContextMenu x:Name="RectContextMenu" Opened="RectContextMenu_Opened">
+                    <MenuItem Header="Показать графики" Click="ShowHistory_Click"/>
                     <MenuItem Header="Настройки хостов" Click="SettingsMenuItem_Click"/>
                     <MenuItem Header="Автозапуск с Windows" 
                         Click="AutoStartMenuItem_Click"
