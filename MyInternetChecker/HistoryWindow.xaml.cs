@@ -1,5 +1,6 @@
 ﻿using LiveCharts;
 using LiveCharts.Wpf;
+using MyInternetChecker.Chart;
 using MyInternetChecker.Config;
 using System;
 using System.Collections.Generic;
