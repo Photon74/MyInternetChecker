@@ -11,6 +11,7 @@ using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Shapes;
 using System.Windows.Threading;
+using System.Windows.Forms; // Для NotifyIcon
 
 namespace MyInternetChecker;
 
@@ -30,6 +31,10 @@ public partial class MainWindow
     private Storyboard _onlineAnimation;
     private Storyboard _offlineAnimation;
     private bool _wasOnline = false; // Для отслеживания предыдущего состояния
+
+    private System.Windows.Forms.NotifyIcon _notifyIcon; // Иконка в трее
+    private bool _isMinimizedToTray = false; // Флаг состояния
+    private TrayIconManager _trayIconManager;
 
     private bool _isDragging = false;
     private Point _dragStartPoint;
@@ -59,8 +64,25 @@ public partial class MainWindow
             Rect.Fill = Brushes.Gray;
         };
 
+        Closing += (s, e) =>
+        {
+            // Отменяем закрытие
+            e.Cancel = true;
+
+            // Скрываем окно
+            Hide();
+        };
+
+        //// Инициализируем менеджер трея
+        //_trayManager = new TrayManager();
+        //_trayManager.Initialize(this);
+        // Создаем анимированную иконку в трее
+        _trayIconManager = new TrayIconManager(this);
+
         TimerStart();
     }
+
+    public Rectangle StatusRectangle => Rect;
 
     private void LoadWindowPosition()
     {
@@ -214,7 +236,7 @@ public partial class MainWindow
         Close();
     }
 
-    private async void ShowSettingsWindow()
+    public async void ShowSettingsWindow()
     {
         // Отменяем текущие операции
         _cts?.Cancel();
@@ -272,16 +294,23 @@ public partial class MainWindow
         AutoStartMenuItem.IsChecked = AutoStartManager.IsAutoStartEnabled;
     }
 
-    private void Rect_MouseEnter(object sender, MouseEventArgs e)
+    private void Rect_MouseEnter(object sender, System.Windows.Input.MouseEventArgs e)
     {
         _isMouseOver = true;
         ShowToolTip();
     }
 
-    private void Rect_MouseLeave(object sender, MouseEventArgs e)
+    private void Rect_MouseLeave(object sender, System.Windows.Input.MouseEventArgs e)
     {
         _isMouseOver = false;
         HideToolTip();
+    }
+
+    public void ShowHistoryWindow()
+    {
+        var historyWindow = new HistoryWindow();
+        historyWindow.Owner = this;
+        historyWindow.Show();
     }
 
     private void ShowToolTip()
@@ -324,7 +353,7 @@ public partial class MainWindow
     }
 
     // Также обрабатываем перемещение мыши для drag&drop
-    protected override void OnMouseMove(MouseEventArgs e)
+    protected override void OnMouseMove(System.Windows.Input.MouseEventArgs e)
     {
         base.OnMouseMove(e);
 
@@ -370,15 +399,25 @@ public partial class MainWindow
         Rect.BeginAnimation(Rectangle.FillProperty, null);
     }
 
+    private void MinimizeToTray_Click(object sender, RoutedEventArgs e)
+    {
+        Hide();
+    }
+
     /// <summary>Освобождает ресурсы при закрытии окна</summary>
     /// <param name="e">Аргументы события закрытия</param>
     protected override void OnClosed(EventArgs e)
     {
+        // Сохраняем позицию окна
         SaveWindowPosition();
 
+        // Останавливаем анимации и таймер
         StopAllAnimations();
         _cts?.Cancel();
         _timer?.Stop();
+
+        // Освобождаем ресурсы иконки в трее
+        _trayIconManager?.Dispose();
         base.OnClosed(e);
     }
 }

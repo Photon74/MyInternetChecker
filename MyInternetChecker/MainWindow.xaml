@@ -52,6 +52,7 @@
                         Click="AutoStartMenuItem_Click"
                         IsCheckable="True"
                         x:Name="AutoStartMenuItem"/>
+                    <MenuItem Header="Свернуть в трей" Click="MinimizeToTray_Click"/>
                     <Separator/>
                     <MenuItem Header="Выход" Click="ExitMenuItem_Click"/>
                 </ContextMenu>
