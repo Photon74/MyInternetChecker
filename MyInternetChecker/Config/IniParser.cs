@@ -17,8 +17,8 @@ internal static class IniParser
 
             // Пропускаем пустые строки и комментарии
             if (string.IsNullOrEmpty(trimmedLine)
-                || trimmedLine.StartsWith("#")
-                || trimmedLine.StartsWith(";"))
+                || trimmedLine.StartsWith('#')
+                || trimmedLine.StartsWith(';'))
                 continue;
 
             // Секция [section]
