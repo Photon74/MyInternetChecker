@@ -18,8 +18,8 @@ namespace MyInternetChecker
         private NotifyIcon _trayIcon;
         private MainWindow _mainWindow;
         private System.Windows.Threading.DispatcherTimer _animationTimer;
-        private System.Drawing.Bitmap _trayBitmap;
-        private System.Drawing.Graphics _graphics;
+        private Bitmap _trayBitmap;
+        private Graphics _graphics;
         private bool _isDisposed;
 
         public TrayIconManager(MainWindow mainWindow)

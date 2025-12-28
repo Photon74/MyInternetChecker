@@ -3,7 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace MyInternetChecker
+namespace MyInternetChecker.Chart
 {
     public static class HistoryManager
     {
@@ -36,7 +36,7 @@ namespace MyInternetChecker
                     .Where(x => (now - x.timestamp) <= _historyDuration) // Фильтруем по времени
                     .Select(x => (double)x.ping)
                     .ToArray()
-                : new double[0];
+                : [];
         }
 
         public static long GetLatestPing(string host)

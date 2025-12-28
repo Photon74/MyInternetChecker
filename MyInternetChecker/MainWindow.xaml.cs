@@ -11,7 +11,8 @@ using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Shapes;
 using System.Windows.Threading;
-using System.Windows.Forms; // Для NotifyIcon
+using System.Windows.Forms;
+using MyInternetChecker.Chart; // Для NotifyIcon
 
 namespace MyInternetChecker;
 
@@ -21,7 +22,6 @@ public partial class MainWindow
     private DispatcherTimer _timer = null;
     private readonly double _screenHeight = SystemParameters.FullPrimaryScreenHeight;
     private readonly double _screenWidth = SystemParameters.FullPrimaryScreenWidth;
-    private int _count = 0;
     private bool _isMouseOver = false;
     private bool _isChecking = false;
     private Dictionary<string, long> _pingResults = new();
@@ -32,8 +32,6 @@ public partial class MainWindow
     private Storyboard _offlineAnimation;
     private bool _wasOnline = false; // Для отслеживания предыдущего состояния
 
-    private System.Windows.Forms.NotifyIcon _notifyIcon; // Иконка в трее
-    private bool _isMinimizedToTray = false; // Флаг состояния
     private TrayIconManager _trayIconManager;
 
     private bool _isDragging = false;
