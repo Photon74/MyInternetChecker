@@ -16,6 +16,9 @@
     <PackageReference Include="LiveCharts.Wpf" Version="0.9.7" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\..\..\..\OneDrive\Рабочий стол\Notification.Wpf-7.0.0.0\Notification.Wpf\Notification.Wpf.csproj" />
+  </ItemGroup>
+  <ItemGroup>
     <None Update="ReadMe.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

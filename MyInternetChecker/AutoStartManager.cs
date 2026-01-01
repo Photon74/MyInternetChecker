@@ -22,8 +22,9 @@ public static class AutoStartManager
                 var value = registry_key?.GetValue(AppName);
                 return value is not null;
             }
-            catch
+            catch (Exception ex)
             {
+                Logger.LogError(ex, "Ошибка при изменении автозапуска");
                 return false;
             }
         }
@@ -51,6 +52,7 @@ public static class AutoStartManager
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Ошибка при изменении автозапуска: {ex.Message}");
+                Logger.LogError(ex, "Ошибка при изменении автозапуска");
             }
         }
     }

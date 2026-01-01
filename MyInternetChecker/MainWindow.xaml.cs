@@ -156,6 +156,10 @@ public partial class MainWindow
                 UpdateToolTip();
             }
         }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Ошибка в таймере проверки интернета");
+        }
         finally
         {
             _isChecking = false;

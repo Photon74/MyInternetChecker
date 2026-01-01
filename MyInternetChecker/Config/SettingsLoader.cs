@@ -35,6 +35,7 @@ internal static class SettingsLoader
         catch (Exception ex)
         {
             Console.WriteLine($"Ошибка загрузки настроек: {ex.Message}");
+            Logger.LogError(ex, "Ошибка загрузки настроек");
         }
 
         return settings;

@@ -108,6 +108,7 @@ namespace MyInternetChecker
             {
                 // В случае ошибки просто игнорируем - лучше неработающая анимация, чем сломанная программа
                 System.Diagnostics.Debug.WriteLine($"Ошибка обновления иконки трея: {ex.Message}");
+                Logger.LogError(ex, "Ошибка обновления иконки трея");
             }
         }
 

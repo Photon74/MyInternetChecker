@@ -32,6 +32,7 @@ public partial class HostsSettingsWindow
         {
             MessageBox.Show($"Ошибка загрузки настроек: {ex.Message}", "Ошибка",
                 MessageBoxButton.OK, MessageBoxImage.Error);
+            Logger.LogError(ex, "Ошибка загрузки настроек");
             _hosts = new ObservableCollection<string>();
             HostsListView.ItemsSource = _hosts;
         }
@@ -52,6 +53,7 @@ public partial class HostsSettingsWindow
         {
             MessageBox.Show($"Ошибка сохранения: {ex.Message}", "Ошибка",
                 MessageBoxButton.OK, MessageBoxImage.Error);
+            Logger.LogError(ex, "Ошибка сохранения");
         }
     }
 

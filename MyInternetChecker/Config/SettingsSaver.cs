@@ -47,6 +47,7 @@ internal static class SettingsSaver
         catch (Exception ex)
         {
             Console.WriteLine($"Ошибка сохранения настроек: {ex.Message}");
+            Logger.LogError(ex, "Ошибка сохранения настроек");
         }
     }
 
